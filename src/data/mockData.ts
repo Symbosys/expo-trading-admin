@@ -28,7 +28,8 @@ export const users = [
     balance: '12,450', 
     level: 'Gold', 
     referrals: 15, 
-    status: 'Active' 
+    status: 'Active',
+    referralCode: 'JOHN2024' 
   },
   { 
     id: 2, 
@@ -37,7 +38,8 @@ export const users = [
     balance: '8,320', 
     level: 'Silver', 
     referrals: 8, 
-    status: 'Active' 
+    status: 'Active',
+    referralCode: 'JANE8732' 
   },
   { 
     id: 3, 
@@ -46,7 +48,8 @@ export const users = [
     balance: '25,100', 
     level: 'Platinum', 
     referrals: 32, 
-    status: 'Active' 
+    status: 'Active',
+    referralCode: 'MIKE5491' 
   },
   { 
     id: 4, 
@@ -55,7 +58,8 @@ export const users = [
     balance: '5,670', 
     level: 'Bronze', 
     referrals: 4, 
-    status: 'Active' 
+    status: 'Active',
+    referralCode: 'SARA3210' 
   },
   { 
     id: 5, 
@@ -64,7 +68,8 @@ export const users = [
     balance: '18,900', 
     level: 'Gold', 
     referrals: 21, 
-    status: 'Blocked' 
+    status: 'Blocked',
+    referralCode: 'TOMB6789' 
   },
 ];
 
