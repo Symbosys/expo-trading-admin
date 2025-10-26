@@ -11,6 +11,12 @@ import Users from "./pages/admin/Users";
 import Investments from "./pages/admin/Investments";
 import Plans from "./pages/admin/Plans";
 import Wallets from "./pages/admin/Wallets";
+import Referrals from "./pages/admin/Referrals";
+import Withdrawals from "./pages/admin/Withdrawals";
+import Transfers from "./pages/admin/Transfers";
+import ROI from "./pages/admin/ROI";
+import Settings from "./pages/admin/Settings";
+import Support from "./pages/admin/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,12 +37,12 @@ const App = () => (
               <Route path="investments" element={<Investments />} />
               <Route path="plans" element={<Plans />} />
               <Route path="wallets" element={<Wallets />} />
-              <Route path="referrals" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Referrals Page - Coming Soon</h2></div>} />
-              <Route path="withdrawals" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Withdrawals Page - Coming Soon</h2></div>} />
-              <Route path="transfers" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Transfers Page - Coming Soon</h2></div>} />
-              <Route path="roi" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">ROI & Earnings Page - Coming Soon</h2></div>} />
-              <Route path="settings" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Settings Page - Coming Soon</h2></div>} />
-              <Route path="support" element={<div className="text-center py-12"><h2 className="text-2xl font-bold">Support Page - Coming Soon</h2></div>} />
+              <Route path="referrals" element={<Referrals />} />
+              <Route path="withdrawals" element={<Withdrawals />} />
+              <Route path="transfers" element={<Transfers />} />
+              <Route path="roi" element={<ROI />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="support" element={<Support />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
