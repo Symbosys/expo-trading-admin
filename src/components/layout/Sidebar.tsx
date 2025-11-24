@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, TrendingUp, Package, 
   GitBranch, Wallet, ArrowDownToLine, ArrowLeftRight, 
-  Percent, Settings, Headphones, X
+  Percent, Settings, Headphones, X, LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -12,16 +12,16 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  // { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/admin/users', icon: Users, label: 'Users' },
   { path: '/admin/investments', icon: TrendingUp, label: 'Investments' },
   { path: '/admin/plans', icon: Package, label: 'Plans' },
-  { path: '/admin/referrals', icon: GitBranch, label: 'Referrals' },
-  { path: '/admin/wallets', icon: Wallet, label: 'Wallets' },
+  // { path: '/admin/referrals', icon: GitBranch, label: 'Referrals' },
+  // { path: '/admin/wallets', icon: Wallet, label: 'Wallets' },
   { path: '/admin/withdrawals', icon: ArrowDownToLine, label: 'Withdrawals' },
   { path: '/admin/transfers', icon: ArrowLeftRight, label: 'Transfers' },
   { path: '/admin/roi', icon: Percent, label: 'ROI & Earnings' },
-  { path: '/admin/settings', icon: Settings, label: 'Settings' },
+  // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
 ];
 
@@ -76,6 +76,22 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             </NavLink>
           ))}
         </nav>
+
+        {/* Logout Button */}
+        <div className="p-4 border-t border-sidebar-border">
+          <button 
+            onClick={() => {
+              // TODO: Implement logout logic (e.g., clear auth, redirect to login)
+              console.log('Logout clicked');
+              localStorage.removeItem('authToken');
+              window.location.href = '/admin/login';
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
       </aside>
     </>
   );

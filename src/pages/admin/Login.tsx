@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { api } from '@/api/apiClient';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,9 +14,10 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - redirect to dashboard
+    const res = await api.post('/admin/login', { email, password });
+
     navigate('/admin/dashboard');
   };
 
