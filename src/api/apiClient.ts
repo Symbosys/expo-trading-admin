@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: "https://trading-omega-sepia.vercel.app/",
   timeout: 5000,
   withCredentials: true,
   headers: {
