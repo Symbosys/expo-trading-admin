@@ -1,7 +1,8 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "https://trading-omega-sepia.vercel.app/",
+  // baseURL: "https://trading-omega-sepia.vercel.app/",
+  baseURL: "http://localhost:4000/api",
   timeout: 5000,
   withCredentials: true,
   headers: {
@@ -14,7 +15,7 @@ export const api = axios.create({
 // Interceptor – always attach the latest token from localStorage
 // ------------------------------------------------------------------
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("admin_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

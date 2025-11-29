@@ -1,26 +1,48 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { api } from '@/api/apiClient';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { api } from '@/api/apiClient';
-
+import { Moon, Sun, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 const Login = () => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      navigate('/admin/dashboard');
+    }
+  }, [navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await api.post('/admin/login', { email, password });
-
-    navigate('/admin/dashboard');
+    try {
+      const res = await api.post('/admin/login', { email, password });
+     
+      // Assuming response structure: res.data = { token: '...', user: { id: '...', ... } }
+      // Adjust based on your actual API response
+      const token = res.data.token;
+      const userId = res.data.user?.id || res.data.userId; // Fallback if structure differs
+      if (token) {
+        localStorage.setItem('admin_token', token);
+        if (userId) {
+          localStorage.setItem('admin_userId', userId);
+        }
+       
+        // Optional: Store entire user object as JSON
+        // const userData = { id: userId, email: res.data.user?.email, ... };
+        // localStorage.setItem('admin_userData', JSON.stringify(userData));
+      }
+      navigate('/admin/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Handle error (e.g., toast notification)
+    }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="absolute top-4 right-4">
@@ -37,7 +59,6 @@ const Login = () => {
           )}
         </Button>
       </div>
-
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
@@ -88,5 +109,4 @@ const Login = () => {
     </div>
   );
 };
-
 export default Login;

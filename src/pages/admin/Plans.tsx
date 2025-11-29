@@ -386,8 +386,10 @@ const PlanForm = ({
         />
       </div>
       <div className="space-y-2">
-        <Label>Status</Label>
+        <Label htmlFor="plan-status">Status</Label>
         <select
+          id="plan-status"
+          aria-label="Plan status"
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           value={form.isActive ? "true" : "false"}
           onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}

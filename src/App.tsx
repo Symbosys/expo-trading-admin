@@ -15,13 +15,17 @@ import Plans from "./pages/admin/Plans";
 import Referrals from "./pages/admin/Referrals";
 import ROI from "./pages/admin/ROI";
 // import Settings from "./pages/admin/Settings";
+import ProtectedRoute from "./components/protectedRoute";
 import Support from "./pages/admin/Support";
 import Transfers from "./pages/admin/Transfers";
 import Users from "./pages/admin/Users";
 
+
+import { WalletCards } from "lucide-react";
+import QrCode from "./pages/admin/QrCode";
+import AdminInvestmentPage from "./pages/admin/useerinvestment";
 import Withdrawals from "./pages/admin/Withdrawals";
 import NotFound from "./pages/NotFound";
-import { WalletCards } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -35,7 +39,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/admin/login" replace />} />
             <Route path="/admin/login" element={<Login />} />
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="users" element={<Users />} />
               <Route path="investments" element={<Investments />} />
@@ -44,9 +48,11 @@ const App = () => (
               <Route path="referrals" element={<Referrals />} />
               <Route path="withdrawals" element={<Withdrawals />} />
               <Route path="transfers" element={<Transfers />} />
+              <Route path="qr-code" element={<QrCode />} />
               <Route path="roi" element={<ROI />} />
               {/* <Route path="settings" element={<Settings />} /> */}
               <Route path="support" element={<Support />} />
+              <Route path="AdminInvestmentPage" element={<AdminInvestmentPage />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -1,9 +1,8 @@
 // src/pages/Users.tsx  (or wherever you keep the component)
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { api } from "@/api/apiClient";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -11,17 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
-  Search,
-  Eye,
-  Edit,
-  Trash2,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Eye,
+  Search,
+  Trash2,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { api } from "@/api/apiClient";
+import { useEffect, useState } from "react";
 
 // --------------------------
 // Types (updated to match backend schema)
@@ -94,7 +94,7 @@ const Users = () => {
     setLoading(true);
     setError(null);
     try {
-      const params: any = { page, limit };
+      const params:any = { page, limit };
       if (search) params.search = search;
 
       const { data } = await api.get("/user/all", { params });

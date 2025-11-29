@@ -1,10 +1,17 @@
-import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, Users, TrendingUp, Package, 
-  GitBranch, Wallet, ArrowDownToLine, ArrowLeftRight, 
-  Percent, Settings, Headphones, X, LogOut
-} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  ArrowDownToLine, ArrowLeftRight,
+  Coins,
+  Headphones,
+  LogOut,
+  Package,
+  Percent,
+  QrCode,
+  TrendingUp,
+  Users,
+  X
+} from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,6 +30,8 @@ const navItems = [
   { path: '/admin/roi', icon: Percent, label: 'ROI & Earnings' },
   // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
+  {path: '/admin/qr-code', icon: QrCode, label: 'QR Code'},
+  {path:'/admin/AdminInvestmentPage',icon: Coins, label:"User-Investment"}
 ];
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
@@ -49,12 +58,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             </div>
             <span className="font-bold text-lg text-sidebar-foreground">CryptoAdmin</span>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="lg:hidden p-1 hover:bg-sidebar-accent rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-sidebar-foreground" />
           </button>
+
         </div>
 
         {/* Navigation */}
@@ -83,10 +93,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             onClick={() => {
               // TODO: Implement logout logic (e.g., clear auth, redirect to login)
               console.log('Logout clicked');
-              localStorage.removeItem('authToken');
+              localStorage.removeItem('admin_token');
               window.location.href = '/admin/login';
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+            
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
