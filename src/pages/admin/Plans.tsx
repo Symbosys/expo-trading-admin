@@ -20,46 +20,56 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
+
 // ------------------- Types -------------------
 interface SubscriptionPlan {
   id: string;
   name: string;
   minimumInvestment: string;
-  roiPerMonth: string;
+  roiPerMonth?: string | null;
+  roiPerDay?: string | null;
   durationInMonths: number;
   description: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
 interface Pagination {
   total: number;
   totalPages: number;
   current: number;
   count: number;
 }
+
 // ------------------- Component -------------------
 const Plans = () => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
-  const limit = 6; // 2x3 grid
+  const limit = 6;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   // Dialogs
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+
   // Form states
   const [form, setForm] = useState({
     name: "",
     minimumInvestment: "",
+    roiType: "monthly", // "monthly" or "daily"
     roiPerMonth: "",
+    roiPerDay: "",
     durationInMonths: "",
     description: "",
     isActive: true,
   });
+
   const { toast } = useToast();
+
   // ------------------- API Calls -------------------
   const fetchPlans = async (page: number) => {
     setLoading(true);
@@ -69,7 +79,6 @@ const Plans = () => {
         params: { page, limit },
       });
       setPlans(data.data);
-      // If backend doesn't return pagination, mock it
       setPagination({
         total: data.data.length,
         totalPages: 1,
@@ -84,14 +93,24 @@ const Plans = () => {
       setLoading(false);
     }
   };
+
   const createPlan = async () => {
     try {
       const payload = {
-        ...form,
+        name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
-        roiPerMonth: parseFloat(form.roiPerMonth) / 100, // 10% → 0.10
         durationInMonths: parseInt(form.durationInMonths),
+        description: form.description || null,
+        isActive: form.isActive,
       };
+
+      // Add only the selected ROI type
+      if (form.roiType === "monthly") {
+        payload.roiPerMonth = parseFloat(form.roiPerMonth) / 100; // 10% → 0.10
+      } else {
+        payload.roiPerDay = parseFloat(form.roiPerDay) / 100; // 0.5% → 0.005
+      }
+
       await api.post("/subscription/create", payload);
       toast({ title: "Success", description: "Plan created!" });
       setCreateOpen(false);
@@ -105,15 +124,27 @@ const Plans = () => {
       });
     }
   };
+
   const updatePlan = async () => {
     if (!selectedPlan) return;
     try {
       const payload = {
-        ...form,
+        name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
-        roiPerMonth: parseFloat(form.roiPerMonth) / 100,
         durationInMonths: parseInt(form.durationInMonths),
+        description: form.description || null,
+        isActive: form.isActive,
       };
+
+      // Add only the selected ROI type
+      if (form.roiType === "monthly") {
+        payload.roiPerMonth = parseFloat(form.roiPerMonth) / 100;
+        payload.roiPerDay = null; // Clear the other type
+      } else {
+        payload.roiPerDay = parseFloat(form.roiPerDay) / 100;
+        payload.roiPerMonth = null; // Clear the other type
+      }
+
       await api.put(`/subscription/${selectedPlan.id}`, payload);
       toast({ title: "Success", description: "Plan updated!" });
       setEditOpen(false);
@@ -126,6 +157,7 @@ const Plans = () => {
       });
     }
   };
+
   const deletePlan = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
     try {
@@ -140,33 +172,57 @@ const Plans = () => {
       });
     }
   };
+
   // ------------------- Helpers -------------------
   const resetForm = () => {
     setForm({
       name: "",
       minimumInvestment: "",
+      roiType: "monthly",
       roiPerMonth: "",
+      roiPerDay: "",
       durationInMonths: "",
       description: "",
       isActive: true,
     });
   };
+
   const openEdit = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
+    
+    // Determine which ROI type is set
+    const roiType = plan.roiPerMonth ? "monthly" : "daily";
+    const roiValue = plan.roiPerMonth 
+      ? (parseFloat(plan.roiPerMonth) * 100).toFixed(2) 
+      : (parseFloat(plan.roiPerDay || "0") * 100).toFixed(2);
+
     setForm({
       name: plan.name,
       minimumInvestment: plan.minimumInvestment,
-      roiPerMonth: (parseFloat(plan.roiPerMonth) * 100).toFixed(2), // 0.10 → 10.00
+      roiType,
+      roiPerMonth: roiType === "monthly" ? roiValue : "",
+      roiPerDay: roiType === "daily" ? roiValue : "",
       durationInMonths: plan.durationInMonths.toString(),
       description: plan.description || "",
       isActive: plan.isActive,
     });
     setEditOpen(true);
   };
+
+  const getROIDisplay = (plan: SubscriptionPlan): string => {
+    if (plan.roiPerMonth) {
+      return `${(parseFloat(plan.roiPerMonth) * 100).toFixed(2)}% Monthly`;
+    } else if (plan.roiPerDay) {
+      return `${(parseFloat(plan.roiPerDay) * 100).toFixed(2)}% Daily`;
+    }
+    return "N/A";
+  };
+
   // ------------------- Effects -------------------
   useEffect(() => {
     fetchPlans(page);
   }, [page]);
+
   // ------------------- Render -------------------
   return (
     <>
@@ -189,20 +245,6 @@ const Plans = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #9ca3af;
         }
-        .custom-scrollbar::-webkit-scrollbar-corner {
-          background: #1f2937;
-        }
-        .custom-scrollbar::-ms-scrollbar-track {
-          background: #1f2937;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-ms-scrollbar-thumb {
-          background: #6b7280;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-ms-scrollbar-thumb:hover {
-          background: #9ca3af;
-        }
       `}</style>
       <div className="space-y-6">
         {/* Header */}
@@ -216,64 +258,67 @@ const Plans = () => {
             Add Plan
           </Button>
         </div>
+
         {/* Loading / Error */}
-        {loading && <p className="text-center text-muted-foreground ">Loading plans...</p>}
+        {loading && <p className="text-center text-muted-foreground">Loading plans...</p>}
         {error && <p className="text-center text-destructive">{error}</p>}
+
         {/* Plans Grid */}
         {!loading && !error && (
           <>
-          <div>
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar ">
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {plans.map((plan) => (
-                  <Card key={plan.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-xl">{plan.name}</CardTitle>
-                        <Badge variant={plan.isActive ? "default" : "secondary"}>
-                          {plan.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">ROI per Month</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {(parseFloat(plan.roiPerMonth) * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Duration</p>
-                        <p className="text-lg font-semibold">{plan.durationInMonths} months</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Min Investment</p>
-                        <p className="text-lg font-semibold">
-                          ${parseFloat(plan.minimumInvestment).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => openEdit(plan)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          className="flex-1"
-                          onClick={() => deletePlan(plan.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            <div>
+              <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {plans.map((plan) => (
+                    <Card key={plan.id}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-xl">{plan.name}</CardTitle>
+                          <Badge variant={plan.isActive ? "default" : "secondary"}>
+                            {plan.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">ROI</p>
+                          <p className="text-2xl font-bold text-primary">
+                            {getROIDisplay(plan)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Duration</p>
+                          <p className="text-lg font-semibold">{plan.durationInMonths} months</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Min Investment</p>
+                          <p className="text-lg font-semibold">
+                            ${parseFloat(plan.minimumInvestment).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => openEdit(plan)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() => deletePlan(plan.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </div>
-            </div>
+
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-6">
@@ -302,6 +347,7 @@ const Plans = () => {
             )}
           </>
         )}
+
         {/* Create Dialog */}
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogContent className="max-w-lg">
@@ -312,6 +358,7 @@ const Plans = () => {
             <PlanForm form={form} setForm={setForm} onSubmit={createPlan} onCancel={() => setCreateOpen(false)} />
           </DialogContent>
         </Dialog>
+
         {/* Edit Dialog */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="max-w-lg">
@@ -326,6 +373,7 @@ const Plans = () => {
     </>
   );
 };
+
 // ------------------- Reusable Form -------------------
 const PlanForm = ({
   form,
@@ -348,16 +396,43 @@ const PlanForm = ({
           placeholder="Premium Plan"
         />
       </div>
+
       <div className="space-y-2">
-        <Label>ROI per Month (%)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          value={form.roiPerMonth}
-          onChange={(e) => setForm({ ...form, roiPerMonth: e.target.value })}
-          placeholder="15"
-        />
+        <Label>ROI Type</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={form.roiType}
+          onChange={(e) => setForm({ ...form, roiType: e.target.value })}
+        >
+          <option value="monthly">Monthly ROI</option>
+          <option value="daily">Daily ROI</option>
+        </select>
       </div>
+
+      {form.roiType === "monthly" ? (
+        <div className="space-y-2">
+          <Label>ROI per Month (%)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={form.roiPerMonth}
+            onChange={(e) => setForm({ ...form, roiPerMonth: e.target.value })}
+            placeholder="10"
+          />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label>ROI per Day (%)</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={form.roiPerDay}
+            onChange={(e) => setForm({ ...form, roiPerDay: e.target.value })}
+            placeholder="0.5"
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label>Duration (months)</Label>
         <Input
@@ -367,6 +442,7 @@ const PlanForm = ({
           placeholder="12"
         />
       </div>
+
       <div className="space-y-2">
         <Label>Minimum Investment ($)</Label>
         <Input
@@ -377,6 +453,7 @@ const PlanForm = ({
           placeholder="5000"
         />
       </div>
+
       <div className="space-y-2">
         <Label>Description (optional)</Label>
         <Input
@@ -385,11 +462,11 @@ const PlanForm = ({
           placeholder="High-return plan..."
         />
       </div>
+
       <div className="space-y-2">
         <Label htmlFor="plan-status">Status</Label>
         <select
           id="plan-status"
-          aria-label="Plan status"
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           value={form.isActive ? "true" : "false"}
           onChange={(e) => setForm({ ...form, isActive: e.target.value === "true" })}
@@ -398,6 +475,7 @@ const PlanForm = ({
           <option value="false">Inactive</option>
         </select>
       </div>
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>Cancel</Button>
         <Button onClick={onSubmit}>Save</Button>
@@ -405,4 +483,5 @@ const PlanForm = ({
     </div>
   );
 };
+
 export default Plans;

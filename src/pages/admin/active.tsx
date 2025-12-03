@@ -1,0 +1,170 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { api } from '../../api/apiClient';
+
+const SETTINGS_QUERY_KEY = ['settings'];
+
+const fetchSettings = async () => {
+  const response = await api.get('/setting');
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to fetch settings');
+  }
+  return response.data.data;
+};
+
+const updateSettings = async (data) => {
+  const response = await api.post('/setting/update/setting', data);
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to update settings');
+  }
+  return response.data.data;
+};
+
+const SettingsPage = () => {
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    phoneNumber: '',
+    email: '',
+    activeUser: '',
+    totalUser: '',
+  });
+  const [error, setError] = useState('');
+
+  const { data: settingsData, isLoading: loading, error: fetchError } = useQuery({
+    queryKey: SETTINGS_QUERY_KEY,
+    queryFn: fetchSettings,
+  });
+
+  useEffect(() => {
+    if (settingsData) {
+      setFormData({
+        phoneNumber: settingsData.phoneNumber || '',
+        email: settingsData.email || '',
+        activeUser: settingsData.activeUser || '',
+        totalUser: settingsData.totalUser || '',
+      });
+    }
+  }, [settingsData]);
+
+  const mutation = useMutation({
+    mutationFn: updateSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
+      toast.success('Settings updated successfully!');
+      setError('');
+    },
+    onError: (err) => {
+      const msg = err.message || 'An error occurred while updating';
+      setError(msg);
+      toast.error(msg);
+    },
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.email && !formData.phoneNumber && !formData.activeUser && !formData.totalUser) {
+      toast.error('At least one field is required');
+      return;
+    }
+    mutation.mutate(formData);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-lg">Loading settings...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Settings</h1>
+       
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              id="phoneNumber"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              placeholder="Enter phone number"
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              placeholder="Enter email"
+            />
+          </div>
+          <div>
+            <label htmlFor="activeUser" className="block text-sm font-medium text-gray-700 mb-1">
+              Active Users
+            </label>
+            <input
+              type="number"
+              id="activeUser"
+              name="activeUser"
+              value={formData.activeUser}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              placeholder="Enter active users count"
+              min="0"
+            />
+          </div>
+          <div>
+            <label htmlFor="totalUser" className="block text-sm font-medium text-gray-700 mb-1">
+              Total Users
+            </label>
+            <input
+              type="number"
+              id="totalUser"
+              name="totalUser"
+              value={formData.totalUser}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              placeholder="Enter total users count"
+              min="0"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {mutation.isPending ? 'Updating...' : 'Update Settings'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsPage;

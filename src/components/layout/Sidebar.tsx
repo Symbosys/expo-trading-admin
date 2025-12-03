@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import {
   ArrowDownToLine, ArrowLeftRight,
+  BedDouble,
   Coins,
   Headphones,
   LogOut,
@@ -31,7 +32,8 @@ const navItems = [
   // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
   {path: '/admin/qr-code', icon: QrCode, label: 'QR Code'},
-  {path:'/admin/AdminInvestmentPage',icon: Coins, label:"User-Investment"}
+  {path:'/admin/AdminInvestmentPage',icon: Coins, label:"User-Investment"},
+  {path:'/admin/SettingsPage',icon:BedDouble, label:"SettingsPage"}
 ];
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {

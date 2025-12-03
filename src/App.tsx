@@ -22,6 +22,7 @@ import Users from "./pages/admin/Users";
 
 
 import { WalletCards } from "lucide-react";
+import SettingsPage from "./pages/admin/active.js";
 import QrCode from "./pages/admin/QrCode";
 import AdminInvestmentPage from "./pages/admin/useerinvestment";
 import Withdrawals from "./pages/admin/Withdrawals";
@@ -52,8 +53,11 @@ const App = () => (
               <Route path="roi" element={<ROI />} />
               {/* <Route path="settings" element={<Settings />} /> */}
               <Route path="support" element={<Support />} />
+      
               <Route path="AdminInvestmentPage" element={<AdminInvestmentPage />} />
+              <Route path="SettingsPage" element={<SettingsPage/>} />
             </Route>
+           
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
