@@ -71,7 +71,7 @@ const AdminQRPage: React.FC = () => {
         formData.append("qrCodeImage", qrImage);
       }
 
-      const response = await api.put("/qr/add", formData, { // Adjust endpoint path if needed
+      const response = await api.put("/qr-code/add", formData, { // Adjust endpoint path if needed
         headers: {
           "Content-Type": "multipart/form-data",
         },
