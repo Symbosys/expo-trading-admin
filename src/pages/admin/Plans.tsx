@@ -26,6 +26,7 @@ interface SubscriptionPlan {
   id: string;
   name: string;
   minimumInvestment: string;
+  maximumInvestment?: string | null;
   roiPerMonth?: string | null;
   roiPerDay?: string | null;
   durationInMonths: number;
@@ -60,6 +61,7 @@ const Plans = () => {
   const [form, setForm] = useState({
     name: "",
     minimumInvestment: "",
+    maximumInvestment: "",
     roiType: "monthly", // "monthly" or "daily"
     roiPerMonth: "",
     roiPerDay: "",
@@ -96,9 +98,15 @@ const Plans = () => {
 
   const createPlan = async () => {
     try {
-      const payload = {
+      if (!form.maximumInvestment) {
+        toast({ title: "Error", description: "Maximum investment is required", variant: "destructive" });
+        return;
+      }
+
+      const payload: any = {
         name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
+        maximumInvestment: parseFloat(form.maximumInvestment),
         durationInMonths: parseInt(form.durationInMonths),
         description: form.description || null,
         isActive: form.isActive,
@@ -128,9 +136,15 @@ const Plans = () => {
   const updatePlan = async () => {
     if (!selectedPlan) return;
     try {
-      const payload = {
+      if (form.maximumInvestment === "") {
+        toast({ title: "Error", description: "Maximum investment is required", variant: "destructive" });
+        return;
+      }
+
+      const payload: any = {
         name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
+        maximumInvestment: parseFloat(form.maximumInvestment),
         durationInMonths: parseInt(form.durationInMonths),
         description: form.description || null,
         isActive: form.isActive,
@@ -178,6 +192,7 @@ const Plans = () => {
     setForm({
       name: "",
       minimumInvestment: "",
+      maximumInvestment: "",
       roiType: "monthly",
       roiPerMonth: "",
       roiPerDay: "",
@@ -189,16 +204,17 @@ const Plans = () => {
 
   const openEdit = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
-    
+
     // Determine which ROI type is set
     const roiType = plan.roiPerMonth ? "monthly" : "daily";
-    const roiValue = plan.roiPerMonth 
-      ? (parseFloat(plan.roiPerMonth) * 100).toFixed(2) 
+    const roiValue = plan.roiPerMonth
+      ? (parseFloat(plan.roiPerMonth) * 100).toFixed(2)
       : (parseFloat(plan.roiPerDay || "0") * 100).toFixed(2);
 
     setForm({
       name: plan.name,
       minimumInvestment: plan.minimumInvestment,
+      maximumInvestment: plan.maximumInvestment || "",
       roiType,
       roiPerMonth: roiType === "monthly" ? roiValue : "",
       roiPerDay: roiType === "daily" ? roiValue : "",
@@ -291,9 +307,13 @@ const Plans = () => {
                           <p className="text-lg font-semibold">{plan.durationInMonths} months</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Min Investment</p>
+                          <p className="text-sm text-muted-foreground">Investment Range</p>
                           <p className="text-lg font-semibold">
                             ${parseFloat(plan.minimumInvestment).toLocaleString()}
+                            {plan.maximumInvestment
+                              ? ` - $${parseFloat(plan.maximumInvestment).toLocaleString()}`
+                              : "+"
+                            }
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -451,6 +471,17 @@ const PlanForm = ({
           value={form.minimumInvestment}
           onChange={(e) => setForm({ ...form, minimumInvestment: e.target.value })}
           placeholder="5000"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Maximum Investment ($)</Label>
+        <Input
+          type="number"
+          step="0.01"
+          value={form.maximumInvestment}
+          onChange={(e) => setForm({ ...form, maximumInvestment: e.target.value })}
+          placeholder="eg. 10000"
         />
       </div>
 

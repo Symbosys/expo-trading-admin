@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import {
-  ArrowDownToLine, ArrowLeftRight,
+  ArrowDownToLine,
+  ArrowLeftRight,
   BedDouble,
   Coins,
   Headphones,
@@ -10,7 +11,8 @@ import {
   QrCode,
   TrendingUp,
   Users,
-  X
+  X,
+  Bell
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -25,15 +27,15 @@ const navItems = [
   { path: '/admin/investments', icon: TrendingUp, label: 'Investments' },
   { path: '/admin/plans', icon: Package, label: 'Plans' },
   // { path: '/admin/referrals', icon: GitBranch, label: 'Referrals' },
-  // { path: '/admin/wallets', icon: Wallet, label: 'Wallets' },
   { path: '/admin/withdrawals', icon: ArrowDownToLine, label: 'Withdrawals' },
   { path: '/admin/transfers', icon: ArrowLeftRight, label: 'Transfers' },
   { path: '/admin/roi', icon: Percent, label: 'ROI & Earnings' },
   // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
-  {path: '/admin/qr-code', icon: QrCode, label: 'QR Code'},
-  {path:'/admin/AdminInvestmentPage',icon: Coins, label:"User-Investment"},
-  {path:'/admin/SettingsPage',icon:BedDouble, label:"SettingsPage"}
+  { path: '/admin/qr-code', icon: QrCode, label: 'QR Code' },
+  { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
+  { path: '/admin/AdminInvestmentPage', icon: Coins, label: "User-Investment" },
+  { path: '/admin/SettingsPage', icon: BedDouble, label: "SettingsPage" }
 ];
 
 export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
@@ -41,12 +43,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     <>
       {/* Backdrop for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
       <aside className={cn(
         "fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 flex flex-col",
@@ -78,8 +80,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               onClick={() => window.innerWidth < 1024 && onClose()}
               className={({ isActive }) => cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
-                isActive 
-                  ? "bg-primary text-primary-foreground shadow-md" 
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-md"
                   : "text-sidebar-foreground hover:bg-sidebar-accent"
               )}
             >
@@ -91,7 +93,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
         {/* Logout Button */}
         <div className="p-4 border-t border-sidebar-border">
-          <button 
+          <button
             onClick={() => {
               // TODO: Implement logout logic (e.g., clear auth, redirect to login)
               console.log('Logout clicked');
@@ -99,7 +101,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               window.location.href = '/admin/login';
             }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-            
+
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>

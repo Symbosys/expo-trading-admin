@@ -68,7 +68,7 @@ const AdminQRPage: React.FC = () => {
         formData.append("walletaddress", walletAddress.trim());
       }
       if (qrImage) {
-        formData.append("qrCodeImage", qrImage);
+        formData.append("image", qrImage);
       }
 
       const response = await api.put("/qr-code/add", formData, { // Adjust endpoint path if needed
@@ -92,57 +92,57 @@ const AdminQRPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-gray-600">Loading QR data...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-lg text-muted-foreground">Loading QR data...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin QR Code Management</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">Admin QR Code Management</h1>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-md">
             {error}
           </div>
         )}
 
         {/* Current QR Data Display */}
-        <div className="bg-white shadow-md rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current QR Data</h2>
+        <div className="bg-card text-card-foreground shadow-sm border border-border rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Current QR Data</h2>
           {qrData ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Wallet Address</label>
-                <p className="mt-1 text-sm text-gray-900">{qrData.wallentaddress || "Not set"}</p>
+                <label className="block text-sm font-medium text-muted-foreground">Wallet Address</label>
+                <p className="mt-1 text-sm text-foreground">{qrData.wallentaddress || "Not set"}</p>
               </div>
               {qrData.qrCodeUrl?.secure_url && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">QR Code Image</label>
+                  <label className="block text-sm font-medium text-muted-foreground">QR Code Image</label>
                   <img
                     src={qrData.qrCodeUrl.secure_url}
                     alt="Current QR Code"
-                    className="mt-2 w-48 h-48 object-contain border border-gray-300 rounded-md"
+                    className="mt-2 w-48 h-48 object-contain border border-border rounded-md"
                   />
                 </div>
               )}
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 Last Updated: {new Date(qrData.updatedAt).toLocaleString()}
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">No QR data found. Create one below.</p>
+            <p className="text-muted-foreground">No QR data found. Create one below.</p>
           )}
         </div>
 
         {/* Update Form */}
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Update QR Code</h2>
+        <div className="bg-card text-card-foreground shadow-sm border border-border rounded-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Update QR Code</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="walletAddress" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="walletAddress" className="block text-sm font-medium text-muted-foreground">
                 Wallet Address
               </label>
               <input
@@ -150,15 +150,15 @@ const AdminQRPage: React.FC = () => {
                 id="walletAddress"
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2 border"
                 placeholder="Enter wallet address (min 26 chars)"
                 minLength={26}
-                required={true} // But allow if image is provided; validation in handler
+                required={true}
               />
             </div>
 
             <div>
-              <label htmlFor="qrImage" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="qrImage" className="block text-sm font-medium text-muted-foreground">
                 QR Code Image (JPEG, PNG, WEBP - max 10MB)
               </label>
               <input
@@ -166,13 +166,13 @@ const AdminQRPage: React.FC = () => {
                 id="qrImage"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleImageChange}
-                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                className="mt-1 block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
               />
               {previewUrl && (
                 <img
                   src={previewUrl}
                   alt="Preview"
-                  className="mt-4 w-48 h-48 object-contain border border-gray-300 rounded-md"
+                  className="mt-4 w-48 h-48 object-contain border border-border rounded-md"
                 />
               )}
             </div>
@@ -180,7 +180,7 @@ const AdminQRPage: React.FC = () => {
             <button
               type="submit"
               disabled={updating}
-              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {updating ? "Updating..." : "Update QR Code"}
             </button>

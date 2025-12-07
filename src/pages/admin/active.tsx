@@ -79,25 +79,25 @@ const SettingsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-lg">Loading settings...</div>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-lg text-muted-foreground">Loading settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Settings</h1>
-       
+    <div className="min-h-screen bg-background py-8">
+      <div className="max-w-md mx-auto bg-card text-card-foreground rounded-lg shadow-sm border border-border p-6">
+        <h1 className="text-2xl font-bold text-foreground mb-6">Admin Settings</h1>
+
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="phoneNumber" className="block text-sm font-medium text-muted-foreground mb-1">
               Phone Number
             </label>
             <input
@@ -106,12 +106,12 @@ const SettingsPage = () => {
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               placeholder="Enter phone number"
             />
           </div>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-muted-foreground mb-1">
               Email
             </label>
             <input
@@ -120,12 +120,12 @@ const SettingsPage = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               placeholder="Enter email"
             />
           </div>
           <div>
-            <label htmlFor="activeUser" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="activeUser" className="block text-sm font-medium text-muted-foreground mb-1">
               Active Users
             </label>
             <input
@@ -134,13 +134,13 @@ const SettingsPage = () => {
               name="activeUser"
               value={formData.activeUser}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               placeholder="Enter active users count"
               min="0"
             />
           </div>
           <div>
-            <label htmlFor="totalUser" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="totalUser" className="block text-sm font-medium text-muted-foreground mb-1">
               Total Users
             </label>
             <input
@@ -149,7 +149,7 @@ const SettingsPage = () => {
               name="totalUser"
               value={formData.totalUser}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               placeholder="Enter total users count"
               min="0"
             />
@@ -157,7 +157,7 @@ const SettingsPage = () => {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mutation.isPending ? 'Updating...' : 'Update Settings'}
           </button>

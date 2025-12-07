@@ -26,6 +26,7 @@ import SettingsPage from "./pages/admin/active.js";
 import QrCode from "./pages/admin/QrCode";
 import AdminInvestmentPage from "./pages/admin/useerinvestment";
 import Withdrawals from "./pages/admin/Withdrawals";
+import Notifications from "./pages/admin/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,11 +54,12 @@ const App = () => (
               <Route path="roi" element={<ROI />} />
               {/* <Route path="settings" element={<Settings />} /> */}
               <Route path="support" element={<Support />} />
-      
+
               <Route path="AdminInvestmentPage" element={<AdminInvestmentPage />} />
-              <Route path="SettingsPage" element={<SettingsPage/>} />
+              <Route path="SettingsPage" element={<SettingsPage />} />
+              <Route path="notifications" element={<Notifications />} />
             </Route>
-           
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
