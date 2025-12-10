@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,47 +5,64 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Bell, Megaphone, Send, Trash2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/api/apiClient";
+import { toast } from "sonner";
 import { useState } from "react";
-import { toast } from "sonner"; // Assuming sonner is used as in App.tsx
 
-// Dummy data for notifications - In a real app, this would come from an API
+// Backend-aligned Notification interface
 interface Notification {
     id: string;
     title: string;
     message: string;
-    type: "INFO" | "SUCCESS" | "WARNING" | "ERROR";
+    type: "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "PROMOTIONAL" | "SYSTEM";
     createdAt: string;
-    isGlobal: boolean;
-    userId?: string;
+    updatedAt: string;
 }
 
-const dummyNotifications: Notification[] = [
-    {
-        id: "1",
-        title: "System Maintenance",
-        message: "Scheduled maintenance on Sunday at 2 AM",
-        type: "INFO",
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        isGlobal: true,
-    },
-    {
-        id: "2",
-        title: "Welcome Bonus",
-        message: "Welcome bonus has been credited to all new users",
-        type: "SUCCESS",
-        createdAt: new Date(Date.now() - 172800000).toISOString(),
-        isGlobal: true,
-    },
-];
+// TanStack Query hook for fetching notifications
+const useNotifications = () => {
+    return useQuery<Notification[]>({
+        queryKey: ['notifications'],
+        queryFn: async () => {
+            const { data } = await api.get('/notifications/all');
+            if (!data.success) {
+                throw new Error("Failed to fetch notifications");
+            }
+            return data.data;
+        },
+    });
+};
+
+// TanStack Query mutation for creating notification
+const useCreateNotification = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (newNotification: Partial<Notification>) => {
+            const { data } = await api.post('/notifications/create', newNotification);
+            if (!data.success) {
+                throw new Error("Failed to create notification");
+            }
+            return data.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            toast.success("Notification created successfully");
+        },
+        onError: (error: any) => {
+            toast.error(`Failed to create notification: ${error.message}`);
+        },
+    });
+};
 
 const Notifications = () => {
-    const [notifications, setNotifications] = useState<Notification[]>(dummyNotifications);
+    const { data: notifications = [], isLoading: isFetching } = useNotifications();
+    const createMutation = useCreateNotification();
+
     const [formData, setFormData] = useState({
         title: "",
         message: "",
-        type: "INFO" as "INFO" | "SUCCESS" | "WARNING" | "ERROR",
-        target: "global", // 'global' or 'user'
-        userId: "",
+        type: "INFO" as "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "PROMOTIONAL" | "SYSTEM",
     });
 
     const handleCreate = (e: React.FormEvent) => {
@@ -57,38 +73,23 @@ const Notifications = () => {
             return;
         }
 
-        // In a real app, you would make an API call here
-        const newNotification: Notification = {
-            id: Math.random().toString(36).substr(2, 9),
+        createMutation.mutate({
             title: formData.title,
             message: formData.message,
             type: formData.type,
-            createdAt: new Date().toISOString(),
-            isGlobal: formData.target === "global",
-            userId: formData.target === "user" ? formData.userId : undefined,
-        };
+        });
 
-        // Simulate API delay
-        toast.promise(new Promise(resolve => setTimeout(resolve, 1000)), {
-            loading: 'Sending notification...',
-            success: () => {
-                setNotifications([newNotification, ...notifications]);
-                setFormData({
-                    title: "",
-                    message: "",
-                    type: "INFO",
-                    target: "global",
-                    userId: "",
-                });
-                return 'Notification created successfully';
-            },
-            error: 'Failed to create notification',
+        // Reset form
+        setFormData({
+            title: "",
+            message: "",
+            type: "INFO",
         });
     };
 
     const handleDelete = (id: string) => {
-        // Logic to delete notification
-        setNotifications(prev => prev.filter(n => n.id !== id));
+        // Note: Delete not implemented in provided controllers; add if needed
+        // For now, simulate
         toast.success("Notification deleted");
     };
 
@@ -126,53 +127,25 @@ const Notifications = () => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Type</Label>
-                                    <Select
-                                        value={formData.type}
-                                        onValueChange={(val: any) => setFormData({ ...formData, type: val })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="INFO">Info</SelectItem>
-                                            <SelectItem value="SUCCESS">Success</SelectItem>
-                                            <SelectItem value="WARNING">Warning</SelectItem>
-                                            <SelectItem value="ERROR">Error</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Target Audience</Label>
-                                    <Select
-                                        value={formData.target}
-                                        onValueChange={(val) => setFormData({ ...formData, target: val })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Target" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="global">All Users (Global)</SelectItem>
-                                            <SelectItem value="user">Specific User</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <Select
+                                    value={formData.type}
+                                    onValueChange={(val: any) => setFormData({ ...formData, type: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="INFO">Info</SelectItem>
+                                        <SelectItem value="SUCCESS">Success</SelectItem>
+                                        <SelectItem value="WARNING">Warning</SelectItem>
+                                        <SelectItem value="ERROR">Error</SelectItem>
+                                        <SelectItem value="PROMOTIONAL">Promotional</SelectItem>
+                                        <SelectItem value="SYSTEM">System</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-
-                            {formData.target === "user" && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="userId">User ID</Label>
-                                    <Input
-                                        id="userId"
-                                        placeholder="Enter User ID"
-                                        value={formData.userId}
-                                        onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-                                    />
-                                </div>
-                            )}
 
                             <div className="space-y-2">
                                 <Label htmlFor="message">Message</Label>
@@ -185,7 +158,7 @@ const Notifications = () => {
                                 />
                             </div>
 
-                            <Button type="submit" className="w-full">
+                            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
                                 <Send className="w-4 h-4 mr-2" />
                                 Send Notification
                             </Button>
@@ -200,15 +173,19 @@ const Notifications = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                            {notifications.length === 0 ? (
+                            {isFetching ? (
+                                <p className="text-center text-muted-foreground py-8">Loading notifications...</p>
+                            ) : notifications.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-8">No notifications found</p>
                             ) : (
                                 notifications.map((notification) => (
                                     <div key={notification.id} className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                                         <div className={`p-2 rounded-full mt-1 shrink-0 ${notification.type === 'INFO' ? 'bg-blue-100 text-blue-600' :
-                                                notification.type === 'SUCCESS' ? 'bg-green-100 text-green-600' :
-                                                    notification.type === 'WARNING' ? 'bg-yellow-100 text-yellow-600' :
-                                                        'bg-red-100 text-red-600'
+                                            notification.type === 'SUCCESS' ? 'bg-green-100 text-green-600' :
+                                                notification.type === 'WARNING' ? 'bg-yellow-100 text-yellow-600' :
+                                                    notification.type === 'ERROR' ? 'bg-red-100 text-red-600' :
+                                                        notification.type === 'PROMOTIONAL' ? 'bg-purple-100 text-purple-600' :
+                                                            'bg-gray-100 text-gray-600'
                                             }`}>
                                             <Bell className="w-4 h-4" />
                                         </div>
@@ -226,25 +203,16 @@ const Notifications = () => {
                                                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium uppercase">
                                                     {notification.type}
                                                 </span>
-                                                {notification.isGlobal ? (
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                                                        Global
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium truncate max-w-[150px]">
-                                                        User: {notification.userId}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
-                                        <Button
+                                        {/* <Button
                                             variant="ghost"
                                             size="icon"
                                             className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                                             onClick={() => handleDelete(notification.id)}
                                         >
                                             <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        </Button> */}
                                     </div>
                                 ))
                             )}
