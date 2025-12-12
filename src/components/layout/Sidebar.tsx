@@ -28,7 +28,7 @@ const navItems = [
   { path: '/admin/plans', icon: Package, label: 'Plans' },
   // { path: '/admin/referrals', icon: GitBranch, label: 'Referrals' },
   { path: '/admin/withdrawals', icon: ArrowDownToLine, label: 'Withdrawals' },
-  { path: '/admin/transfers', icon: ArrowLeftRight, label: 'Transfers' },
+  // { path: '/admin/transfers', icon: ArrowLeftRight, label: 'Transfers' },
   { path: '/admin/roi', icon: Percent, label: 'ROI & Earnings' },
   // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
