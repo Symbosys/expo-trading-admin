@@ -4,13 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, Megaphone, Send, Trash2 } from "lucide-react";
+import { Bell, Megaphone, Send, X, Search, Check, Users } from "lucide-react"; // Added Users icon
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/apiClient";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAllUsers } from "@/api/hooks/useUser";
 
-// Backend-aligned Notification interface
+// --- Types ---
 interface Notification {
     id: string;
     title: string;
@@ -20,115 +21,148 @@ interface Notification {
     updatedAt: string;
 }
 
-// TanStack Query hook for fetching notifications
+interface User {
+    id: string;
+    name: string | null;
+    email: string;
+}
+
+// --- Hooks ---
 const useNotifications = () => {
     return useQuery<Notification[]>({
         queryKey: ['notifications'],
         queryFn: async () => {
             const { data } = await api.get('/notifications/all');
-            if (!data.success) {
-                throw new Error("Failed to fetch notifications");
-            }
             return data.data;
         },
     });
 };
 
-// TanStack Query mutation for creating notification
 const useCreateNotification = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (newNotification: Partial<Notification>) => {
+        mutationFn: async (newNotification: any) => {
+            // Note: Ensure your backend handles 'userIds: []' as "Send to All" logic
             const { data } = await api.post('/notifications/create', newNotification);
-            if (!data.success) {
-                throw new Error("Failed to create notification");
-            }
             return data.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            toast.success("Notification created successfully");
+            toast.success("Notification sent successfully");
         },
         onError: (error: any) => {
-            toast.error(`Failed to create notification: ${error.message}`);
+            toast.error(error.response?.data?.message || "Failed to create notification");
         },
     });
 };
+
+// --- Helper: Simple Debounce Hook ---
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+}
 
 const Notifications = () => {
     const { data: notifications = [], isLoading: isFetching } = useNotifications();
     const createMutation = useCreateNotification();
 
+    // --- Form State ---
     const [formData, setFormData] = useState({
         title: "",
         message: "",
         type: "INFO" as "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "PROMOTIONAL" | "SYSTEM",
     });
 
+    // --- User Selection State ---
+    const [userSearch, setUserSearch] = useState("");
+    const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+    // Debounce search 
+    const debouncedSearch = useDebounce(userSearch, 500);
+
+    // Use Infinite Query Hook (Fetching only 1st page for dropdown suggestions)
+    const { data: userResponse, isLoading: isLoadingUsers } = useAllUsers(10, debouncedSearch);
+
+    // Flatten pages to get users list for the dropdown
+    const foundUsers = userResponse?.pages.flatMap(page => page.data.users) || [];
+
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.title || !formData.message) {
-            toast.error("Please fill in all required fields");
+            toast.error("Please fill in title and message");
             return;
         }
+
+        // LOGIC CHANGE: 
+        // If selectedUsers is empty, we send empty array.
+        // The Backend should interpret empty array as "Global Notification" (All Users).
+        const userIds = selectedUsers.map(u => u.id);
 
         createMutation.mutate({
             title: formData.title,
             message: formData.message,
             type: formData.type,
+            userIds: userIds // Empty = All Users, Populated = Specific Users
         });
 
         // Reset form
-        setFormData({
-            title: "",
-            message: "",
-            type: "INFO",
-        });
+        setFormData({ title: "", message: "", type: "INFO" });
+        setSelectedUsers([]);
+        setUserSearch("");
     };
 
-    const handleDelete = (id: string) => {
-        // Note: Delete not implemented in provided controllers; add if needed
-        // For now, simulate
-        toast.success("Notification deleted");
+    const toggleUserSelection = (user: User) => {
+        if (selectedUsers.find(u => u.id === user.id)) {
+            setSelectedUsers(prev => prev.filter(u => u.id !== user.id));
+        } else {
+            setSelectedUsers(prev => [...prev, user]);
+        }
+    };
+
+    const removeUser = (userId: string) => {
+        setSelectedUsers(prev => prev.filter(u => u.id !== userId));
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Notification Manager</h1>
-                    <p className="text-muted-foreground mt-1">Create and manage system notifications</p>
+                    <p className="text-muted-foreground mt-1">Send alerts and updates to users</p>
                 </div>
-                <Button>
-                    <Bell className="w-4 h-4 mr-2" />
-                    Settings
-                </Button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* Create Notification Form */}
-                <Card>
+            <div className="grid gap-6 lg:grid-cols-2">
+                {/* --- Create Notification Form --- */}
+                <Card className="h-fit">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Megaphone className="w-5 h-5 text-primary" />
-                            Send Notification
+                            Compose Notification
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleCreate} className="space-y-4">
+                            {/* Title Input */}
                             <div className="space-y-2">
                                 <Label htmlFor="title">Title</Label>
                                 <Input
                                     id="title"
-                                    placeholder="Notification Title"
+                                    placeholder="e.g. System Maintenance Update"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                 />
                             </div>
 
+                            {/* Type Selection */}
                             <div className="space-y-2">
-                                <Label>Type</Label>
+                                <Label>Notification Type</Label>
                                 <Select
                                     value={formData.type}
                                     onValueChange={(val: any) => setFormData({ ...formData, type: val })}
@@ -147,72 +181,154 @@ const Notifications = () => {
                                 </Select>
                             </div>
 
+                            {/* Target Audience (User Search) */}
+                            <div className="space-y-2 relative">
+                                <Label className="flex justify-between">
+                                    Target Audience
+                                    <span className={`text-xs ${selectedUsers.length === 0 ? "text-blue-500 font-bold" : "text-muted-foreground"}`}>
+                                        {selectedUsers.length === 0 ? "(Sending to ALL Users)" : `(Selected: ${selectedUsers.length})`}
+                                    </span>
+                                </Label>
+
+                                {/* Selected Users Chips */}
+                                {selectedUsers.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-2 p-2 bg-secondary/20 rounded-md border border-dashed max-h-[100px] overflow-y-auto">
+                                        {selectedUsers.map(user => (
+                                            <div key={user.id} className="bg-background border flex items-center gap-1 px-2 py-1 rounded text-xs font-medium shadow-sm">
+                                                <span>{user.name || user.email}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeUser(user.id)}
+                                                    className="text-muted-foreground hover:text-destructive"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Search Input */}
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder={selectedUsers.length === 0 ? "Leave empty to send to EVERYONE, or type to search..." : "Search to add more users..."}
+                                        className="pl-9"
+                                        value={userSearch}
+                                        onChange={(e) => {
+                                            setUserSearch(e.target.value);
+                                            setIsSearchOpen(true);
+                                        }}
+                                        onFocus={() => setIsSearchOpen(true)}
+                                    />
+                                </div>
+
+                                {/* Dropdown Results */}
+                                {isSearchOpen && (userSearch || foundUsers.length > 0) && (
+                                    <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md max-h-[200px] overflow-y-auto">
+                                        {isLoadingUsers ? (
+                                            <div className="p-3 text-sm text-center text-muted-foreground">Searching...</div>
+                                        ) : foundUsers.length === 0 ? (
+                                            <div className="p-3 text-sm text-center text-muted-foreground">No users found</div>
+                                        ) : (
+                                            foundUsers.map((user: User) => {
+                                                const isSelected = selectedUsers.some(u => u.id === user.id);
+                                                return (
+                                                    <div
+                                                        key={user.id}
+                                                        onClick={() => toggleUserSelection(user)}
+                                                        className={`flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{user.name || "No Name"}</span>
+                                                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                                                        </div>
+                                                        {isSelected && <Check className="w-4 h-4 text-primary" />}
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                        <div
+                                            className="p-2 border-t text-xs text-center text-blue-500 cursor-pointer hover:bg-accent"
+                                            onClick={() => setIsSearchOpen(false)}
+                                        >
+                                            Close List
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Message Input */}
                             <div className="space-y-2">
                                 <Label htmlFor="message">Message</Label>
                                 <Textarea
                                     id="message"
-                                    placeholder="Write your message here..."
-                                    className="min-h-[100px]"
+                                    placeholder="Write your notification content..."
+                                    className="min-h-[120px]"
                                     value={formData.message}
                                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                 />
                             </div>
 
-                            <Button type="submit" className="w-full" disabled={createMutation.isPending}>
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={createMutation.isPending}
+                                variant={selectedUsers.length === 0 ? "default" : "secondary"}
+                            >
                                 <Send className="w-4 h-4 mr-2" />
-                                Send Notification
+                                {createMutation.isPending
+                                    ? "Sending..."
+                                    : selectedUsers.length === 0
+                                        ? "Broadcast to ALL Users" // Button text changes dynamically
+                                        : `Send to ${selectedUsers.length} Selected User${selectedUsers.length !== 1 ? 's' : ''}`
+                                }
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
 
-                {/* Recent Notifications List */}
-                <Card className="h-fit">
+                {/* --- Recent Notifications List --- */}
+                <Card className="h-full max-h-[800px] flex flex-col">
                     <CardHeader>
-                        <CardTitle>Recent Notifications</CardTitle>
+                        <CardTitle>History</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                    <CardContent className="flex-1 overflow-y-auto pr-2">
+                        <div className="space-y-4">
                             {isFetching ? (
-                                <p className="text-center text-muted-foreground py-8">Loading notifications...</p>
+                                <p className="text-center text-muted-foreground py-8">Loading history...</p>
                             ) : notifications.length === 0 ? (
-                                <p className="text-center text-muted-foreground py-8">No notifications found</p>
+                                <div className="text-center py-10 space-y-3">
+                                    <Bell className="w-10 h-10 text-muted-foreground mx-auto opacity-20" />
+                                    <p className="text-muted-foreground">No notifications sent yet.</p>
+                                </div>
                             ) : (
                                 notifications.map((notification) => (
-                                    <div key={notification.id} className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-                                        <div className={`p-2 rounded-full mt-1 shrink-0 ${notification.type === 'INFO' ? 'bg-blue-100 text-blue-600' :
-                                            notification.type === 'SUCCESS' ? 'bg-green-100 text-green-600' :
-                                                notification.type === 'WARNING' ? 'bg-yellow-100 text-yellow-600' :
-                                                    notification.type === 'ERROR' ? 'bg-red-100 text-red-600' :
-                                                        notification.type === 'PROMOTIONAL' ? 'bg-purple-100 text-purple-600' :
+                                    <div key={notification.id} className="flex gap-4 p-4 rounded-lg border bg-card hover:bg-accent/30 transition-all">
+                                        <div className={`mt-1 p-2 rounded-full h-fit shrink-0 ${notification.type === 'INFO' ? 'bg-blue-100 text-blue-600' :
+                                                notification.type === 'SUCCESS' ? 'bg-green-100 text-green-600' :
+                                                    notification.type === 'WARNING' ? 'bg-yellow-100 text-yellow-600' :
+                                                        notification.type === 'ERROR' ? 'bg-red-100 text-red-600' :
                                                             'bg-gray-100 text-gray-600'
                                             }`}>
                                             <Bell className="w-4 h-4" />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <h4 className="font-semibold text-sm truncate">{notification.title}</h4>
-                                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                        <div className="flex-1 space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="font-semibold text-sm">{notification.title}</h4>
+                                                <span className="text-[10px] text-muted-foreground">
                                                     {new Date(notification.createdAt).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground mb-2 break-words">
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
                                                 {notification.message}
                                             </p>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium uppercase">
+                                            <div className="pt-2">
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full border bg-background font-medium uppercase tracking-wider">
                                                     {notification.type}
                                                 </span>
                                             </div>
                                         </div>
-                                        {/* <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                                            onClick={() => handleDelete(notification.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button> */}
                                     </div>
                                 ))
                             )}
