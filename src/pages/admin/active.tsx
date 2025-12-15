@@ -23,9 +23,12 @@ const updateSettings = async (data) => {
 
 const SettingsPage = () => {
   const queryClient = useQueryClient();
+
+  // 1. Added location to initial state
   const [formData, setFormData] = useState({
     phoneNumber: '',
     email: '',
+    location: '',
     activeUser: '',
     totalUser: '',
   });
@@ -38,9 +41,11 @@ const SettingsPage = () => {
 
   useEffect(() => {
     if (settingsData) {
+      // 2. Map API data to state (handling null values)
       setFormData({
         phoneNumber: settingsData.phoneNumber || '',
         email: settingsData.email || '',
+        location: settingsData.location || '',
         activeUser: settingsData.activeUser || '',
         totalUser: settingsData.totalUser || '',
       });
@@ -70,7 +75,8 @@ const SettingsPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.email && !formData.phoneNumber && !formData.activeUser && !formData.totalUser) {
+    // 3. Updated validation logic (optional: check if location is filled if you require it)
+    if (!formData.email && !formData.phoneNumber && !formData.activeUser && !formData.totalUser && !formData.location) {
       toast.error('At least one field is required');
       return;
     }
@@ -110,6 +116,7 @@ const SettingsPage = () => {
               placeholder="Enter phone number"
             />
           </div>
+
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-muted-foreground mb-1">
               Email
@@ -124,6 +131,23 @@ const SettingsPage = () => {
               placeholder="Enter email"
             />
           </div>
+
+          {/* 4. New Location Input Field */}
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-muted-foreground mb-1">
+              Location
+            </label>
+            <input
+              type="text"
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+              placeholder="Enter office location"
+            />
+          </div>
+
           <div>
             <label htmlFor="activeUser" className="block text-sm font-medium text-muted-foreground mb-1">
               Active Users
@@ -139,6 +163,7 @@ const SettingsPage = () => {
               min="0"
             />
           </div>
+
           <div>
             <label htmlFor="totalUser" className="block text-sm font-medium text-muted-foreground mb-1">
               Total Users
@@ -154,6 +179,7 @@ const SettingsPage = () => {
               min="0"
             />
           </div>
+
           <button
             type="submit"
             disabled={mutation.isPending}
