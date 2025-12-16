@@ -68,7 +68,7 @@ const AdminQRPage: React.FC = () => {
         formData.append("walletaddress", walletAddress.trim());
       }
       if (qrImage) {
-        formData.append("image", qrImage);
+        formData.append("qrCodeImage", qrImage);
       }
 
       const response = await api.put("/qr-code/add", formData, { // Adjust endpoint path if needed
