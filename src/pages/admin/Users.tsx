@@ -256,7 +256,7 @@ const Users = () => {
                           {u.email}
                         </td>
                         <td className="py-4 text-sm font-semibold text-primary">
-                          ${parseFloat(u.usdtBalance).toFixed(2)}
+                          ${parseFloat(u?.wallet?.balance || u?.usdtBalance).toFixed(2)}
                         </td>
                         <td className="py-4">
                           <Badge variant="outline">{u.currentLevel}</Badge>
@@ -386,12 +386,12 @@ const Users = () => {
                   <Label className="text-muted-foreground">Total Referrals</Label>
                   <p className="font-semibold">{selectedUser.totalReferrals}</p>
                 </div>
-                <div>
+                {/* <div>
                   <Label className="text-muted-foreground">Total Earnings</Label>
                   <p className="font-semibold text-green-600">
                     ${parseFloat(selectedUser.totalEarnings).toFixed(2)}
                   </p>
-                </div>
+                </div> */}
                 <div>
                   <Label className="text-muted-foreground">Referral Code</Label>
                   <p className="font-mono">{selectedUser.referralCode}</p>
