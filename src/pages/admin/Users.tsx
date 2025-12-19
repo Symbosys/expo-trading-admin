@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useGetReferralByUserId } from "@/api/hooks/useRefferal";
 
 // --------------------------
 // Types (updated to match backend schema)
@@ -50,6 +51,7 @@ interface User {
   updatedAt: string;
   // Additional fields from backend single-user response (optional for list compatibility)
   referredById?: string | null;
+  referredBy?: User;
   wallet?: Wallet;
 }
 
@@ -84,17 +86,20 @@ const Users = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [referrals, setReferrals] = useState<Referral[]>([]);
-  const [referralsLoading, setReferralsLoading] = useState(false);
+
+  const { data: referralData, isLoading: referralsLoading } = useGetReferralByUserId(selectedUser?.id || "");
+  const referrals = referralData?.referrals || [];
 
   const { toast } = useToast();
+
+
 
   // ------------------- API CALLS -------------------
   const fetchUsers = async (page: number, search = "") => {
     setLoading(true);
     setError(null);
     try {
-      const params:any = { page, limit };
+      const params: any = { page, limit };
       if (search) params.search = search;
 
       const { data } = await api.get("/user/all", { params });
@@ -109,13 +114,11 @@ const Users = () => {
     }
   };
 
-  const fetchReferrals = async (userId: string) => {
-    setReferralsLoading(true);
+  const fetchUserDetails = async (userId: string) => {
     try {
       const { data } = await api.get(`/user/${userId}`);
       const userData = data.data;
       const { passwordHash, ...cleanUserData } = userData;
-      setReferrals(userData.referrals || []);
       // Merge full user data into selectedUser to include nested wallet and other fields
       setSelectedUser((prev) => ({ ...prev!, ...cleanUserData }));
     } catch (err) {
@@ -124,8 +127,6 @@ const Users = () => {
         description: err.response?.data?.error || err.message,
         variant: "destructive",
       });
-    } finally {
-      setReferralsLoading(false);
     }
   };
 
@@ -161,7 +162,7 @@ const Users = () => {
   const handleView = async (user: User) => {
     setSelectedUser(user);
     setViewDialogOpen(true);
-    await fetchReferrals(user.id);
+    await fetchUserDetails(user.id);
   };
 
   const handleEdit = (user: User) => {
@@ -410,7 +411,8 @@ const Users = () => {
                 </div>
                 <div>
                   <Label className="text-muted-foreground">Referred By ID</Label>
-                  <p className="font-mono text-xs break-all">{selectedUser.referredById || "None"}</p>
+                  <p className="font-mono text-xs break-all">{selectedUser.referredBy?.name || "None"}</p>
+                  <p className="font-mono text-xs break-all">{selectedUser.referredBy?.id || "None"}</p>
                 </div>
                 {selectedUser.wallet && (
                   <div className="col-span-2">
