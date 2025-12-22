@@ -11,24 +11,22 @@ import { ArrowDownToLine, CheckCircle, ChevronLeft, ChevronRight, Clock, DollarS
 import { useEffect, useState } from 'react';
 import { toast } from "sonner";
 
-type TransactionStatus = 'PENDING' | 'SUCCESS' | 'FAILED'; // Matches Prisma enum
+// Types matching Backend Withdrawal Model
+type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-// Types
 interface User {
   id: string;
   name: string | null;
   email: string;
 }
 
-interface Transaction {
+interface Withdrawal {
   id: string;
   user: User;
-  type: string;
   amount: string;
-  currency: string;
-  status: TransactionStatus;
-  description: string | null;
-  meta: any; // JSON with destination, etc.
+  destinationAddress: string;
+  status: WithdrawalStatus;
+  processedAt: string | null;
   createdAt: string;
 }
 
@@ -44,7 +42,7 @@ const Withdrawals = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const [withdrawals, setWithdrawals] = useState<Transaction[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,27 +51,54 @@ const Withdrawals = () => {
   const [totalRequests, setTotalRequests] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
 
-  // Fetch Withdrawals
+  // Fetch Withdrawals from Correct Endpoint
   const fetchWithdrawals = async (pageNum: number, search = '') => {
     setLoading(true);
     setError(null);
     try {
       const params: any = { page: pageNum, limit };
       if (search) params.search = search;
-      params.type = 'WITHDRAW'; // Fixed: Matches Prisma TransactionType enum (WITHDRAW, not WITHDRAWAL)
 
-      const { data } = await api.get('/transaction/all', { params }); // Fixed: Plural route
-      const transactions = data.data.transactions || [];
-      setWithdrawals(transactions);
-      setPagination(data.data.pagination || null);
+      const { data } = await api.get('/withdraw/all', { params });
 
-      // Calculate stats (using SUCCESS for approved/paid)
-      const pending = transactions.filter((t: Transaction) => t.status === 'PENDING');
-      const approved = transactions.filter((t: Transaction) => t.status === 'SUCCESS');
-      setPendingAmount(pending.reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount), 0));
-      setTotalPaid(approved.reduce((sum: number, t: Transaction) => sum + parseFloat(t.amount), 0));
-      setTotalRequests(data.data.pagination?.total || 0);
+      // Backend might return array directly or wrapped in data.data 
+      // Based on controller: return res.status(StatusCodes.OK).json({ data: withdrawals });
+      // So response.data.data is the array.
+      // NOTE: Controller getAllWithdrawals currently DOES NOT implement pagination logic (skip/take). 
+      // It returns ALL. We will handle client-side pagination if needed or just display all.
+      // For now, let's assume it returns all and we slice it, or just display all.
+
+      const allWithdrawals: Withdrawal[] = data.data || [];
+
+      // Filter by search if backend doesn't do it
+      const filtered = allWithdrawals.filter(w =>
+        w.user.email.toLowerCase().includes(search.toLowerCase()) ||
+        (w.user.name && w.user.name.toLowerCase().includes(search.toLowerCase())) ||
+        w.id.includes(search)
+      );
+
+      // Client-side pagination since backend doesn't support it yet
+      const total = filtered.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (pageNum - 1) * limit;
+      const currentSlice = filtered.slice(startIndex, startIndex + limit);
+
+      setWithdrawals(currentSlice);
+      setPagination({
+        total,
+        totalPages,
+        current: pageNum,
+        count: currentSlice.length
+      });
+
+      // Calculate stats
+      const pending = allWithdrawals.filter(w => w.status === 'PENDING');
+      const approved = allWithdrawals.filter(w => w.status === 'APPROVED');
+      setPendingAmount(pending.reduce((sum, w) => sum + parseFloat(w.amount), 0));
+      setTotalPaid(approved.reduce((sum, w) => sum + parseFloat(w.amount), 0));
+      setTotalRequests(total);
       setPendingRequests(pending.length);
+
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message;
       setError(msg);
@@ -84,24 +109,27 @@ const Withdrawals = () => {
     }
   };
 
-  // Approve/Reject
+  // Approve
   const handleApprove = async (id: string, userName: string) => {
     try {
-      await api.put(`/transactions/${id}`, { status: 'SUCCESS' }); // Fixed: Matches Prisma TransactionStatus
-      toast.success(`Withdrawal #${id.slice(-6)} approved for ${userName}`);
+      await api.put(`/withdraw/${id}`, { status: 'APPROVED' });
+      toast.success(`Withdrawal approved for ${userName}`);
       fetchWithdrawals(page, searchQuery); // Refresh
     } catch (err: any) {
-      toast.error('Failed to approve withdrawal');
+      const msg = err.response?.data?.error || 'Failed to approve withdrawal';
+      toast.error(msg);
     }
   };
 
+  // Reject
   const handleReject = async (id: string, userName: string) => {
     try {
-      await api.put(`/transactions/${id}`, { status: 'FAILED' }); // Fixed: Matches Prisma TransactionStatus
-      toast.error(`Withdrawal #${id.slice(-6)} rejected for ${userName}`);
+      await api.put(`/withdraw/${id}`, { status: 'REJECTED' });
+      toast.success(`Withdrawal rejected for ${userName}`);
       fetchWithdrawals(page, searchQuery); // Refresh
     } catch (err: any) {
-      toast.error('Failed to reject withdrawal');
+      const msg = err.response?.data?.error || 'Failed to reject withdrawal';
+      toast.error(msg);
     }
   };
 
@@ -132,7 +160,7 @@ const Withdrawals = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by user, email, or description..."
+              placeholder="Search by user, email, or ID..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -145,12 +173,12 @@ const Withdrawals = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Pending Amount"
-          value={`$${pendingAmount.toLocaleString()}`}
+          value={`$${pendingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           icon={Clock}
         />
         <StatCard
           title="Total Paid"
-          value={`$${totalPaid.toLocaleString()}`}
+          value={`$${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           change="+15.3%"
           icon={CheckCircle}
           trend="up"
@@ -196,18 +224,21 @@ const Withdrawals = () => {
                   </thead>
                   <tbody>
                     {withdrawals.map((withdrawal) => (
-                      <tr key={withdrawal.id} className="border-b border-border last:border-0">
-                        <td className="py-4 text-sm">#{withdrawal.id.slice(-6)}</td>
+                      <tr key={withdrawal.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                        <td className="py-4 text-sm font-mono">#{withdrawal.id.slice(-6)}</td>
                         <td className="py-4 text-sm font-medium">
-                          {withdrawal.user.name || withdrawal.user.email}
+                          <div className="flex flex-col">
+                            <span>{withdrawal.user.name || 'Unknown'}</span>
+                            <span className="text-xs text-muted-foreground">{withdrawal.user.email}</span>
+                          </div>
                         </td>
                         <td className="py-4 text-sm font-semibold text-primary">
-                          ${parseFloat(withdrawal.amount).toFixed(2)} {withdrawal.currency}
+                          ${parseFloat(withdrawal.amount).toFixed(2)}
                         </td>
                         <td className="py-4">
-                          <code className="text-xs bg-muted px-2 py-1 rounded break-all">
-                            {withdrawal.meta?.destination ? 
-                              `${withdrawal.meta.destination.slice(0, 20)}...` : 
+                          <code className="text-xs bg-muted px-2 py-1 rounded break-all" title={withdrawal.destinationAddress}>
+                            {withdrawal.destinationAddress ?
+                              `${withdrawal.destinationAddress.slice(0, 10)}...${withdrawal.destinationAddress.slice(-4)}` :
                               'N/A'
                             }
                           </code>
@@ -218,9 +249,14 @@ const Withdrawals = () => {
                         <td className="py-4">
                           <Badge
                             variant={
-                              withdrawal.status === 'SUCCESS' ? 'default' : // Fixed: SUCCESS for approved
-                              withdrawal.status === 'PENDING' ? 'secondary' :
-                              'destructive'
+                              withdrawal.status === 'APPROVED' ? 'default' :
+                                withdrawal.status === 'PENDING' ? 'secondary' :
+                                  'destructive'
+                            }
+                            className={
+                              withdrawal.status === 'APPROVED' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                                withdrawal.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                                  'bg-red-500/10 text-red-500 border-red-500/20'
                             }
                           >
                             {withdrawal.status}
@@ -232,7 +268,7 @@ const Withdrawals = () => {
                               <Button
                                 size="sm"
                                 onClick={() => handleApprove(withdrawal.id, withdrawal.user.name || withdrawal.user.email)}
-                                className="h-8"
+                                className="h-8 bg-green-500 hover:bg-green-600 text-white"
                               >
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Approve
@@ -255,7 +291,7 @@ const Withdrawals = () => {
                 </table>
               </div>
 
-              {/* Pagination */}
+              {/* Pagination UI */}
               {pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <p className="text-sm text-muted-foreground">
