@@ -29,6 +29,7 @@ interface SubscriptionPlan {
   maximumInvestment?: string | null;
   roiPerMonth?: string | null;
   roiPerDay?: string | null;
+  maximumEarning?: string | null;
   durationInMonths: number;
   description: string | null;
   isActive: boolean;
@@ -65,6 +66,7 @@ const Plans = () => {
     roiType: "monthly", // "monthly" or "daily"
     roiPerMonth: "",
     roiPerDay: "",
+    maximumEarning: "",
     durationInMonths: "",
     description: "",
     isActive: true,
@@ -107,6 +109,7 @@ const Plans = () => {
         name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
         maximumInvestment: parseFloat(form.maximumInvestment),
+        maximumEarning: form.maximumEarning ? parseFloat(form.maximumEarning) : null,
         durationInMonths: parseInt(form.durationInMonths),
         description: form.description || null,
         isActive: form.isActive,
@@ -145,6 +148,7 @@ const Plans = () => {
         name: form.name,
         minimumInvestment: parseFloat(form.minimumInvestment),
         maximumInvestment: parseFloat(form.maximumInvestment),
+        maximumEarning: form.maximumEarning ? parseFloat(form.maximumEarning) : null,
         durationInMonths: parseInt(form.durationInMonths),
         description: form.description || null,
         isActive: form.isActive,
@@ -196,6 +200,7 @@ const Plans = () => {
       roiType: "monthly",
       roiPerMonth: "",
       roiPerDay: "",
+      maximumEarning: "",
       durationInMonths: "",
       description: "",
       isActive: true,
@@ -218,6 +223,7 @@ const Plans = () => {
       roiType,
       roiPerMonth: roiType === "monthly" ? roiValue : "",
       roiPerDay: roiType === "daily" ? roiValue : "",
+      maximumEarning: plan.maximumEarning ? plan.maximumEarning : "",
       durationInMonths: plan.durationInMonths.toString(),
       description: plan.description || "",
       isActive: plan.isActive,
@@ -316,6 +322,14 @@ const Plans = () => {
                             }
                           </p>
                         </div>
+                        {plan.maximumEarning && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Max Earning</p>
+                            <p className="text-lg font-semibold text-green-500">
+                              ${parseFloat(plan.maximumEarning).toLocaleString()}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -482,6 +496,17 @@ const PlanForm = ({
           value={form.maximumInvestment}
           onChange={(e) => setForm({ ...form, maximumInvestment: e.target.value })}
           placeholder="eg. 10000"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Maximum Earning ($) (optional)</Label>
+        <Input
+          type="number"
+          step="0.01"
+          value={form.maximumEarning}
+          onChange={(e) => setForm({ ...form, maximumEarning: e.target.value })}
+          placeholder="eg. 50000"
         />
       </div>
 

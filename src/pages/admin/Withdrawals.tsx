@@ -7,9 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowDownToLine, CheckCircle, ChevronLeft, ChevronRight, Clock, DollarSign, Search, XCircle } from 'lucide-react';
+import { ArrowDownToLine, CheckCircle, ChevronLeft, ChevronRight, Clock, Copy, DollarSign, Eye, Search, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Types matching Backend Withdrawal Model
 type WithdrawalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -46,6 +52,7 @@ const Withdrawals = () => {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingWithdrawal, setViewingWithdrawal] = useState<Withdrawal | null>(null);
   const [pendingAmount, setPendingAmount] = useState(0);
   const [totalPaid, setTotalPaid] = useState(0);
   const [totalRequests, setTotalRequests] = useState(0);
@@ -131,6 +138,12 @@ const Withdrawals = () => {
       const msg = err.response?.data?.error || 'Failed to reject withdrawal';
       toast.error(msg);
     }
+  };
+
+  // Copy to clipboard
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard');
   };
 
   // Effects
@@ -236,12 +249,25 @@ const Withdrawals = () => {
                           ${parseFloat(withdrawal.amount).toFixed(2)}
                         </td>
                         <td className="py-4">
-                          <code className="text-xs bg-muted px-2 py-1 rounded break-all" title={withdrawal.destinationAddress}>
-                            {withdrawal.destinationAddress ?
-                              `${withdrawal.destinationAddress.slice(0, 10)}...${withdrawal.destinationAddress.slice(-4)}` :
-                              'N/A'
-                            }
-                          </code>
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-muted px-2 py-1 rounded break-all" title={withdrawal.destinationAddress}>
+                              {withdrawal.destinationAddress ?
+                                `${withdrawal.destinationAddress.slice(0, 10)}...${withdrawal.destinationAddress.slice(-4)}` :
+                                'N/A'
+                              }
+                            </code>
+                            {withdrawal.destinationAddress && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => handleCopy(withdrawal.destinationAddress)}
+                                title="Copy address"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                         <td className="py-4 text-sm text-muted-foreground">
                           {new Date(withdrawal.createdAt).toLocaleDateString()}
@@ -263,27 +289,38 @@ const Withdrawals = () => {
                           </Badge>
                         </td>
                         <td className="py-4">
-                          {withdrawal.status === 'PENDING' && (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(withdrawal.id, withdrawal.user.name || withdrawal.user.email)}
-                                className="h-8 bg-green-500 hover:bg-green-600 text-white"
-                              >
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleReject(withdrawal.id, withdrawal.user.name || withdrawal.user.email)}
-                                className="h-8"
-                              >
-                                <XCircle className="w-3 h-3 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => setViewingWithdrawal(withdrawal)}
+                              title="View details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {withdrawal.status === 'PENDING' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(withdrawal.id, withdrawal.user.name || withdrawal.user.email)}
+                                  className="h-8 bg-green-500 hover:bg-green-600 text-white"
+                                >
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleReject(withdrawal.id, withdrawal.user.name || withdrawal.user.email)}
+                                  className="h-8"
+                                >
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -323,6 +360,72 @@ const Withdrawals = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* View Details Dialog */}
+      <Dialog open={!!viewingWithdrawal} onOpenChange={(open) => !open && setViewingWithdrawal(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Withdrawal Details</DialogTitle>
+          </DialogHeader>
+          {viewingWithdrawal && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Request ID</p>
+                <p className="text-sm font-mono">#{viewingWithdrawal.id}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">User</p>
+                <p className="text-sm">{viewingWithdrawal.user.name || 'Unknown'}</p>
+                <p className="text-xs text-muted-foreground">{viewingWithdrawal.user.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                <p className="text-sm font-semibold text-primary">${parseFloat(viewingWithdrawal.amount).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Destination Address</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs bg-muted px-2 py-2 rounded break-all flex-1">
+                    {viewingWithdrawal.destinationAddress || 'N/A'}
+                  </code>
+                  {viewingWithdrawal.destinationAddress && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => handleCopy(viewingWithdrawal.destinationAddress)}
+                      title="Copy address"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <Badge
+                  variant={
+                    viewingWithdrawal.status === 'APPROVED' ? 'default' :
+                      viewingWithdrawal.status === 'PENDING' ? 'secondary' :
+                        'destructive'
+                  }
+                  className={
+                    viewingWithdrawal.status === 'APPROVED' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                      viewingWithdrawal.status === 'PENDING' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                        'bg-red-500/10 text-red-500 border-red-500/20'
+                  }
+                >
+                  {viewingWithdrawal.status}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Date</p>
+                <p className="text-sm">{new Date(viewingWithdrawal.createdAt).toLocaleString()}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
