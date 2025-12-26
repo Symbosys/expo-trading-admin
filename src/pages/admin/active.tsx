@@ -31,6 +31,7 @@ const SettingsPage = () => {
     location: '',
     activeUser: '',
     totalUser: '',
+    maxiumEarningReturn: '',
   });
   const [error, setError] = useState('');
 
@@ -48,6 +49,7 @@ const SettingsPage = () => {
         location: settingsData.location || '',
         activeUser: settingsData.activeUser || '',
         totalUser: settingsData.totalUser || '',
+        maxiumEarningReturn: settingsData.maxiumEarningReturn || '',
       });
     }
   }, [settingsData]);
@@ -177,6 +179,23 @@ const SettingsPage = () => {
               className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
               placeholder="Enter total users count"
               min="0"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="maxiumEarningReturn" className="block text-sm font-medium text-muted-foreground mb-1">
+              Maximum Earning Return (Multiplier)
+            </label>
+            <input
+              type="number"
+              id="maxiumEarningReturn"
+              name="maxiumEarningReturn"
+              value={formData.maxiumEarningReturn}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground"
+              placeholder="e.g. 3 (Total Investment * 3)"
+              min="0"
+              step="0.1"
             />
           </div>
 
