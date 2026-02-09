@@ -12,7 +12,8 @@ import {
   TrendingUp,
   Users,
   X,
-  Bell
+  Bell,
+  MessageSquare
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -32,6 +33,7 @@ const navItems = [
   // { path: '/admin/roi', icon: Percent, label: 'ROI & Earnings' },
   // { path: '/admin/settings', icon: Settings, label: 'Settings' },
   { path: '/admin/support', icon: Headphones, label: 'Support' },
+  { path: '/admin/enquiry', icon: MessageSquare, label: 'Enquiries' },
   { path: '/admin/qr-code', icon: QrCode, label: 'QR Code' },
   { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
   { path: '/admin/AdminInvestmentPage', icon: Coins, label: "User-Investment" },

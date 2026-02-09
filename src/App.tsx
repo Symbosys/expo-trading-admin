@@ -27,7 +27,9 @@ import QrCode from "./pages/admin/QrCode";
 import AdminInvestmentPage from "./pages/admin/useerinvestment";
 import Withdrawals from "./pages/admin/Withdrawals";
 import Notifications from "./pages/admin/Notifications";
+import About from "./pages/admin/About";
 import NotFound from "./pages/NotFound";
+import Enquiry from "./pages/admin/enqiry";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +48,7 @@ const App = () => (
               <Route path="users" element={<Users />} />
               <Route path="investments" element={<Investments />} />
               <Route path="plans" element={<Plans />} />
+              <Route path="about" element={<About />} />
               <Route path="wallets" element={<WalletCards />} />
               <Route path="referrals" element={<Referrals />} />
               <Route path="withdrawals" element={<Withdrawals />} />
@@ -54,6 +57,7 @@ const App = () => (
               <Route path="roi" element={<ROI />} />
               {/* <Route path="settings" element={<Settings />} /> */}
               <Route path="support" element={<Support />} />
+              <Route path="enquiry" element={<Enquiry />} />
 
               <Route path="AdminInvestmentPage" element={<AdminInvestmentPage />} />
               <Route path="SettingsPage" element={<SettingsPage />} />
