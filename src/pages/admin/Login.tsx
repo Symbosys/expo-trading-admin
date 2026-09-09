@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from '@/hooks/use-toast';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 import { Moon, Sun, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (token) {
@@ -27,7 +27,7 @@ const Login = () => {
     setIsLoading(true);
     try {
       const res = await api.post('/admin/login', { email, password });
-     
+
       // Assuming response structure: res.data = { token: '...', user: { id: '...', ... } }
       // Adjust based on your actual API response
       const token = res.data.token;
@@ -37,7 +37,7 @@ const Login = () => {
         if (userId) {
           localStorage.setItem('admin_userId', userId);
         }
-       
+
         // Optional: Store entire user object as JSON
         // const userData = { id: userId, email: res.data.user?.email, ... };
         // localStorage.setItem('admin_userData', JSON.stringify(userData));
@@ -45,10 +45,22 @@ const Login = () => {
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      if(error instanceof AxiosError){
-        toast(error.response.data.message || 'Login failed');
+      if (axios.isAxiosError(error)) {
+        const responseMessage = error.response?.data?.message;
+        const message =
+          typeof responseMessage === 'string' && responseMessage.trim()
+            ? responseMessage
+            : error.message;
+        toast({
+          title: 'Login failed',
+          description: message || 'Unable to sign in. Please check your credentials.',
+        });
       } else {
-        toast(error.message || 'Login failed');
+        const message = error instanceof Error ? error.message : '';
+        toast({
+          title: 'Login failed',
+          description: message || 'Unable to sign in. Please try again.',
+        });
       }
     } finally {
       setIsLoading(false);
