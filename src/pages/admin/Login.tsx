@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTheme } from '@/contexts/ThemeContext';
+import { toast } from '@/hooks/use-toast';
+import { AxiosError } from 'axios';
 import { Moon, Sun, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +14,8 @@ const Login = () => {
   const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (token) {
@@ -20,6 +24,7 @@ const Login = () => {
   }, [navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const res = await api.post('/admin/login', { email, password });
      
@@ -40,7 +45,13 @@ const Login = () => {
       navigate('/admin/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
-      // Handle error (e.g., toast notification)
+      if(error instanceof AxiosError){
+        toast(error.response.data.message || 'Login failed');
+      } else {
+        toast(error.message || 'Login failed');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -81,6 +92,7 @@ const Login = () => {
                 placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
@@ -92,6 +104,7 @@ const Login = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
@@ -100,8 +113,8 @@ const Login = () => {
                 Forgot Password?
               </Button>
             </div>
-            <Button type="submit" className="w-full">
-              Sign In
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
         </CardContent>
